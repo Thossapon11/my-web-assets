@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ระบบค้นหาสารเคมี</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <style> 
+    @import url('https://fonts.googleapis.com/css2?family=Kanit&display=swap');
+
+    body {
+      margin: 0; padding: 0; 
+      font-family: 'Kanit', sans-serif;
+      background: linear-gradient(135deg, #6dd5fa, #2980b9);
+      min-height: 100vh;
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .search-container {
+      position: relative; /* เพื่อให้ปุ่ม logout อยู่ด้านบนขวา */
+      background: #fff;
+      border-radius: 24px;
+      padding: 30px 40px 40px;
+      max-width: 960px;
+      width: 100%;
+      box-shadow: 0 30px 60px rgba(0, 123, 255, 0.2);
+      user-select: none;
+    }
+
+    /* ปุ่มออกจากระบบ */
+    .logout-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+      box-shadow: 0 4px 12px rgba(255, 77, 77, 0.4);
+      z-index: 10;
+    }
+    .logout-btn:hover {
+      background: #cc0000;
+      box-shadow: 0 6px 16px rgba(204, 0, 0, 0.6);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 28px;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      user-select: none;
+    }
+    .header i {
+      font-size: 32px;
+      color: #2980b9;
+    }
+
+    .search-box-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .search-box-group input {
+      flex-grow: 1;
+      padding: 14px 24px;
+      border-radius: 40px;
+      border: 2px solid #9ec9f5;
+      font-size: 16px;
+      font-style: italic;
+      color: #6c7a89;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    .search-box-group input::placeholder {
+      color: #a0afbf;
+      user-select: none;
+    }
+    .search-box-group input:focus {
+      border-color: #2980b9;
+      color: #1c2833;
+    }
+
+    .search-box-group button {
+      background: linear-gradient(135deg, #2980b9, #6dd5fa);
+      border: none;
+      border-radius: 40px;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 12px 26px rgba(41, 128, 185, 0.45);
+      transition: background 0.3s ease;
+      user-select: none;
+    }
+    .search-box-group button:hover {
+      background: linear-gradient(135deg, #1b4f72, #3da3f7);
+      box-shadow: 0 14px 30px rgba(41, 128, 185, 0.6);
+    }
+    .search-box-group button i {
+      margin-right: 8px;
+      font-size: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+      font-size: 15px;
+      user-select: text;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    thead th {
+      background-color: #2980b9;
+      color: white;
+      font-weight: 700;
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: none;
+      user-select: none;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+    tbody td {
+      background: #f7fbff;
+      padding: 14px 20px;
+      color: #2c3e50;
+      cursor: pointer;
+      border-bottom: 10px solid transparent;
+      transition: background-color 0.25s ease;
+    }
+    tbody tr:hover td {
+      background-color: #d1e6ff;
+    }
+
+    #pagination {
+      margin-top: 22px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      user-select: none;
+    }
+    #pagination button {
+      padding: 10px 16px;
+      border-radius: 30px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      color: #2980b9;
+      background: #d6e6fd;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(41, 128, 185, 0.25);
+      transition: background 0.3s ease, color 0.3s ease;
+      min-width: 40px;
+    }
+    #pagination button.active {
+      background: #2980b9;
+      color: white;
+      box-shadow: 0 6px 16px rgba(41, 128, 185, 0.7);
+    }
+    #pagination button:hover:not(.active) {
+      background: #4a90e2;
+      color: white;
+      box-shadow: 0 6px 16px rgba(41, 128, 185, 0.6);
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      user-select: none;
+    }
+    .modal-content {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 95vw;
+      max-width: 700px;
+      max-height: 80vh;
+      padding: 40px 50px;
+      border-radius: 30px;
+      background: #ffffff;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+      overflow-y: auto;
+      font-size: 16px;
+      color: #2c3e50;
+      user-select: text;
+    }
+    .modal-content h3 {
+      font-size: 34px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #1a2a4c;
+      letter-spacing: 0.08em;
+    }
+    .modal-table {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 16px 30px;
+    }
+    .modal-table div {
+      display: flex;
+      align-items: center;
+      justify-content: center; /* กึ่งกลางแนวนอน */
+      padding: 14px 20px;
+      border-radius: 20px;
+      background-color: #f7faff;
+      box-shadow: 0 6px 16px rgba(41, 128, 185, 0.1);
+      color: #324a6e;
+      word-break: break-word;
+      text-align: center; /* กึ่งกลางแนวตั้ง */
+    }
+    .modal-table div.label {
+      font-weight: 700;
+      color: #1f3a72;
+      background-color: #dbe7ff;
+      text-align: center;
+      justify-content: center;
+      box-shadow: inset 0 0 5px #aec7ff;
+    }
+    .close-btn {
+      position: absolute;
+      top: 16px;
+      right: 24px;
+      font-size: 32px;
+      font-weight: 700;
+      color: #6b7b99;
+      cursor: pointer;
+      transition: color 0.3s ease;
+      border: none;
+      background: transparent;
+      user-select: none;
+    }
+    .close-btn:hover {
+      color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-container" role="main" aria-label="ระบบค้นหาสารเคมี">
+    <!-- ปุ่มออกจากระบบ -->
+    <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+
+    <div class="header">
+      <img src="https://github.com/Thossapon11/my-web-assets/blob/main/pharmacy-logo-tu-TH.png?raw=true" 
+      alt="โลโก้" 
+      style="height: 65px; width: auto; margin-right: 1px; vertical-align: middle;" />
+    <div>
+    <div>ระบบค้นหาสารเคมี</div>
+    <div style="font-size: 16px; font-weight: 500; color: #2980b9;">ศูนย์บริการเภสัชกรรมอุตสาหการ</div>
+    </div>
+    </div>
+
+    <div class="search-box-group">
+      <input type="search" id="searchBox" aria-label="ช่องค้นหาสารเคมี" placeholder="🔍 พิมพ์คำค้น เช่น ชื่อสารเคมี, Bottle ID, ประเภท..." />
+      <button aria-label="ค้นหาสารเคมี" onclick="searchChemical()"><i class="fas fa-search"></i> ค้นหา</button>
+    </div>
+    <table id="chemicalTable" aria-label="ตารางสารเคมี">
+      <thead>
+        <tr>
+          <th scope="col">NO.</th>
+          <th scope="col">Bottle ID (กำหนดโดยศูนย์)</th>
+          <th scope="col">ชื่อสารเคมี</th>
+          <th scope="col">CAS No.</th>
+          <th scope="col">ประเภทสารเคมี</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>a
+    <div id="pagination" role="navigation" aria-label="การแบ่งหน้า"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+    <div class="modal-content">
+      <button class="close-btn" aria-label="ปิดรายละเอียด" onclick="closeModal()">&times;</button>
+      <h3 id="modalTitle">รายละเอียดสารเคมี</h3>
+      <div class="modal-table" aria-describedby="modalTitle" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const allData = [
+      ["1","B001","Ethanol","64-17-5","Flammable","500","ml","AR","","liquid","Lab Storage A","2024-12-01","2025-01-01","2026-01-01","Sigma-Aldrich"],
+      ["2","B002","Sodium Chloride","7647-14-5","Non-hazardous","1000","g","AR","solid","","Shelf 3","2024-11-15","2024-12-01","2029-11-15","Merck"],
+      ["3","B003","Acetic Acid","64-19-7","Corrosive","200","ml","GR","","liquid","Lab Storage B","2024-10-20","2024-11-01","2025-10-20","Fisher Scientific"],
+      ["4","B004","Magnesium Sulfate","7487-88-9","Non-hazardous","500","g","AR","solid","","Shelf 1","2025-01-10","2025-02-01","2030-01-10","Sigma-Aldrich"],
+      ["5","B005","Hydrochloric Acid","7647-01-0","Corrosive","1000","ml","GR","","liquid","Lab Storage C","2024-09-15","2024-10-01","2025-09-15","Merck"],
+    ];
+
+    // เติมข้อมูลให้ครบ 100 รายการ
+    const chemicalNames = ["Ethanol","Sodium Chloride","Acetic Acid","Magnesium Sulfate","Hydrochloric Acid","Potassium Nitrate","Calcium Carbonate","Ammonium Sulfate","Sodium Hydroxide","Benzene"];
+    const casNumbers = ["64-17-5","7647-14-5","64-19-7","7487-88-9","7647-01-0","7757-79-1","471-34-1","7783-20-2","1310-73-2","71-43-2"];
+    const hazardClasses = ["Flammable","Non-hazardous","Corrosive","Toxic","Irritant","Oxidizer"];
+    const units = ["ml","g","kg","L"];
+    const grades = ["AR","GR","LR","CP"];
+    const states = [["solid",""],["","liquid"]];
+    const locations = ["Lab Storage A","Lab Storage B","Shelf 1","Shelf 2","Shelf 3","Lab Storage C"];
+    const suppliers = ["Sigma-Aldrich","Merck","Fisher Scientific","VWR","Acme Chemicals"];
+
+    function randomDate(start,end){
+      const diff = end.getTime() - start.getTime();
+      const newDiff = diff * Math.random();
+      const date = new Date(start.getTime() + newDiff);
+      return date.toISOString().split("T")[0];
+    }
+
+    while(allData.length < 100){
+      const i = allData.length + 1;
+      const idx = Math.floor(Math.random()*chemicalNames.length);
+      const solidOrLiquid = states[Math.floor(Math.random()*states.length)];
+      allData.push([
+        i.toString(),
+        "B" + i.toString().padStart(3,"0"),
+        chemicalNames[idx],
+        casNumbers[idx],
+        hazardClasses[Math.floor(Math.random()*hazardClasses.length)],
+        Math.floor(Math.random()*900) + 100,
+        units[Math.floor(Math.random()*units.length)],
+        grades[Math.floor(Math.random()*grades.length)],
+        solidOrLiquid[0],
+        solidOrLiquid[1],
+        locations[Math.floor(Math.random()*locations.length)],
+        randomDate(new Date(2023,0,1),new Date(2024,11,31)),
+        randomDate(new Date(2024,0,1),new Date(2025,11,31)),
+        randomDate(new Date(2025,0,1),new Date(2027,11,31)),
+        suppliers[Math.floor(Math.random()*suppliers.length)],
+      ]);
+    }
+
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    function renderTable(data){
+  const tbody = document.querySelector("#chemicalTable tbody");
+  tbody.innerHTML = "";
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const pageData = data.slice(startIndex, endIndex);
+
+  if (pageData.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.setAttribute("colspan", "5");
+    td.style.textAlign = "center";
+    td.style.padding = "20px";
+    td.style.color = "#888";
+    td.style.fontStyle = "italic";
+    td.textContent = "ไม่พบข้อมูลที่ตรงกับคำค้นหา";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  pageData.forEach((row) => {
+    const tr = document.createElement("tr");
+    for (let i = 0; i < 5; i++) {
+      const td = document.createElement("td");
+      td.textContent = row[i];
+      tr.appendChild(td);
+    }
+    tr.onclick = () => showDetails(row);
+    tbody.appendChild(tr);
+  });
+}
+
+
+    function renderPagination(data){
+      const totalPages = Math.ceil(data.length/itemsPerPage);
+      const container = document.getElementById("pagination");
+      container.innerHTML = "";
+      for(let i=1; i<=totalPages; i++){
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = "page-btn";
+        if(i === currentPage) btn.classList.add("active");
+        btn.onclick = () => {
+          currentPage = i;
+          renderTable(data);
+          renderPagination(data);
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    function searchChemical(){
+      const keyword = document.getElementById("searchBox").value.toLowerCase();
+      const filtered = keyword.trim() === "" ? allData :
+        allData.filter(row => row.some(cell => cell.toString().toLowerCase().includes(keyword)));
+      currentPage = 1;
+      renderTable(filtered);
+      renderPagination(filtered);
+    }
+
+    function showDetails(row){
+      const modal = document.getElementById("detailModal");
+      const modalBody = document.getElementById("modalBody");
+      modalBody.innerHTML = "";
+      const labels = [
+        "NO.", "Bottle ID (กำหนดโดยศูนย์)", "ชื่อสารเคมี", "CAS No.", "ประเภทสารเคมี",
+        "ปริมาณ", "หน่วย", "เกรด", "สถานะสาร (แข็ง)", "สถานะสาร (ของเหลว)",
+        "ตำแหน่งจัดเก็บ", "วันที่รับ", "วันที่เปิดใช้", "วันที่หมดอายุ", "ผู้จัดหา"
+      ];
+      for(let i=0; i<row.length; i++){
+        const labelDiv = document.createElement("div");
+        labelDiv.className = "label";
+        labelDiv.textContent = labels[i];
+
+        const valueDiv = document.createElement("div");
+        valueDiv.textContent = row[i];
+
+        modalBody.appendChild(labelDiv);
+        modalBody.appendChild(valueDiv);
+      }
+      modal.style.display = "block";
+    }
+
+    function closeModal(){
+      document.getElementById("detailModal").style.display = "none";
+    }
+
+    function logout() {
+      google.script.run.withSuccessHandler(function(html) {
+      document.open();
+      document.write(html);
+      document.close();
+    }).loadLoginPage();
+    }
+
+
+    window.onclick = function(event){
+      const modal = document.getElementById("detailModal");
+      if(event.target === modal){
+        closeModal();
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderTable(allData);
+      renderPagination(allData);
+    });
+
+    document.getElementById("searchBox").addEventListener("input", searchChemical);
+  </script>
+</body>
+</html>

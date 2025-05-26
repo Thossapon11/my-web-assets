@@ -1,0 +1,26 @@
+// ✅ Code.gs
+function doGet(e) {
+  const page = e && e.parameter.page;
+  if (page === "index") {
+    return HtmlService.createHtmlOutputFromFile("index");
+  }
+  return HtmlService.createHtmlOutputFromFile("login");
+}
+
+function checkLogin(username, password) {
+  return username === "Admin" && password === "Admin";
+}
+
+function getChemicalData() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("ChemicalData");
+  const data = sheet.getDataRange().getValues();
+  return data.slice(1); // skip header
+}
+
+function loadLoginPage() {
+  return HtmlService.createHtmlOutputFromFile("login").getContent();
+}
+
+function loadIndexPage() {
+  return HtmlService.createHtmlOutputFromFile("index").getContent();
+}
